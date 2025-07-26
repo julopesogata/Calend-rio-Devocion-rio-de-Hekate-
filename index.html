@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌙 Calendário Hekate - Roda do Sul</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/lunarphase-js@1.0.1/dist/lunarphase.min.js"></script>
+  <style>
+    :root {
+      --roxo-escuro: #0d001a;
+      --roxo-medio: #1c0033;
+      --roxo-claro: #9933ff;
+      --lilás: #d6b3ff;
+    }
+    
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: var(--roxo-escuro);
+      color: #f4e8ff;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      text-align: center;
+      padding: 1.5rem;
+      background-color: var(--roxo-medio);
+      border-bottom: 1px solid var(--roxo-claro);
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--lilás);
+      font-size: 2rem;
+    }
+
+    #calendar {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      flex-grow: 1;
+    }
+
+    /* Cores dos eventos */
+    .sabbat { background-color: #e74c3c; border-color: #c0392b !important; }
+    .lua-cheia { background-color: #3498db; }
+    .lua-nova { background-color: #2c3e50; }
+    .quartos { background-color: #27ae60; }
+    .deipnon { background-color: #8e44ad; }
+    .hekate { background-color: #9b59b6; }
+
+    footer {
+      background-color: var(--roxo-medio);
+      padding: 1.5rem;
+      text-align: center;
+      border-top: 1px solid var(--roxo-claro);
+    }
+
+    #resumo-mes {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: left;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .evento-item {
+      background: rgba(155, 89, 182, 0.2);
+      padding: 0.8rem;
+      border-radius: 4px;
+      border-left: 3px solid var(--roxo-claro);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Calendário Devocionário de Hekate</h1>
+    <p>Roda do Ano - Hemisfério Sul 🌙</p>
+  </header>
+
+  <div id="calendar"></div>
+
+  <footer>
+    <h2>📆 Resumo do Mês</h2>
+    <div id="resumo-mes"></div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const hoje = new Date();
+      const ano = hoje.getFullYear();
+      const mesAtual = hoje.getMonth();
+
+      // 1. SABBATS (Roda do Sul)
+      const sabbats = [
+        { title: "Samhain 🎃", date: `${ano}-04-30`, desc: "Ano Novo Pagão - Honra aos ancestrais" },
+        { title: "Yule ❄️", date: `${ano}-06-21`, desc: "Solstício de Inverno" },
+        { title: "Imbolc 🕯️", date: `${ano}-08-01`, desc: "Festival das Luzes" },
+        { title: "Ostara 🌸", date: `${ano}-09-21`, desc: "Equinócio de Primavera" },
+        { title: "Beltane 🔥", date: `${ano}-10-31`, desc: "Festa do Fogo" },
+        { title: "Litha ☀️", date: `${ano}-12-21`, desc: "Solstício de Verão" },
+        { title: "Lughnasadh 🌾", date: `${ano}-02-02`, desc: "Festival da Colheita" },
+        { title: "Mabon 🍁", date: `${ano}-03-21`, desc: "Equinócio de Outono" }
+      ].map(e => ({ ...e, className: 'sabbat' }));
+
+      // 2. FESTIVAIS DE HEKATE
+      const festivais = [
+        { title: "Noite da Deusa Negra", date: `${ano}-01-31`, desc: "Celebração de Hekate como Senhora das Sombras" },
+        { title: "Hekate Trivia", date: `${ano}-11-30`, desc: "Festival das Encruzilhadas" },
+        { title: "Festival de Hekate", date: `${ano}-08-13`, desc: "Celebração anual da Deusa" }
+      ].map(e => ({ ...e, className: 'hekate' }));
+
+      // 3. FASES DA LUA (cálculo preciso)
+      function gerarEventosLunares() {
+        const eventos = [];
+        const diasNoMes = new Date(ano, mesAtual + 1, 0).getDate();
+
+        for (let dia = 1; dia <= diasNoMes; dia++) {
+          const data = new Date(ano, mesAtual, dia);
+          const dateStr = data.toISOString().split('T')[0];
+          const { phase, fraction } = LunarPhase.getMoonIllumination(data);
+
+          // Deipnon (véspera da Lua Nova)
+          if (fraction < 0.01) {
+            const deipnonDate = new Date(data);
+            deipnonDate.setDate(deipnonDate.getDate() - 1);
+            eventos.push({
+              title: "🌒 Deipnon",
+              start: deipnonDate.toISOString().split('T')[0],
+              className: 'deipnon',
+              desc: "Último dia do mês lunar - Noite de Hekate"
+            });
+          }
+
+          // Lua Nova (Noumenia)
+          if (phase === 0) {
+            eventos.push({
+              title: "🌑 Noumenia",
+              start: dateStr,
+              className: 'lua-nova',
+              desc: "Lua Nova - Início do mês lunar"
+            });
+          }
+          // Lua Cheia
+          else if (phase === 0.5) {
+            eventos.push({
+              title: "🌕 Lua Cheia",
+              start: dateStr,
+              className: 'lua-cheia',
+              desc: "Plenitude lunar - Poder máximo"
+            });
+          }
+          // Quartos
+          else if (Math.abs(phase - 0.25) < 0.03) {
+            eventos.push({
+              title: "🌓 Quarto Crescente",
+              start: dateStr,
+              className: 'quartos',
+              desc: "Tempo de crescimento"
+            });
+          }
+          else if (Math.abs(phase - 0.75) < 0.03) {
+            eventos.push({
+              title: "🌗 Quarto Minguante",
+              start: dateStr,
+              className: 'quartos',
+              desc: "Tempo de liberação"
+            });
+          }
+        }
+        return eventos;
+      }
+
+      // JUNTA TODOS OS EVENTOS
+      const todosEventos = [
+        ...sabbats,
+        ...festivais,
+        ...gerarEventosLunares()
+      ];
+
+      // 4. MOSTRA RESUMO DO MÊS
+      function atualizarResumo() {
+        const resumo = document.getElementById('resumo-mes');
+        resumo.innerHTML = '';
+        
+        todosEventos
+          .filter(e => new Date(e.date || e.start).getMonth() === mesAtual)
+          .sort((a, b) => new Date(a.date || a.start) - new Date(b.date || b.start))
+          .forEach(e => {
+            const div = document.createElement('div');
+            div.className = 'evento-item';
+            const data = new Date(e.date || e.start);
+            div.innerHTML = `
+              <strong>${data.getDate()}/${data.getMonth() + 1}:</strong>
+              ${e.title}<br>
+              <small>${e.desc}</small>
+            `;
+            resumo.appendChild(div);
+          });
+      }
+
+      // 5. INICIALIZA CALENDÁRIO
+      const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+        locale: 'pt-br',
+        events: todosEventos,
+        eventContent: (arg) => ({
+          html: `<div title="${arg.event.extendedProps.desc}">${arg.event.title}</div>`
+        }),
+        datesSet: () => setTimeout(atualizarResumo, 100)
+      });
+
+      calendar.render();
+      atualizarResumo();
+    });
+  </script>
+</body>
+  </html>
